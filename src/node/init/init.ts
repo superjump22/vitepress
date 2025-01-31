@@ -1,17 +1,17 @@
 import {
+  cancel,
+  confirm,
+  group,
   intro,
   outro,
-  group,
-  text,
   select,
-  cancel,
-  confirm
+  text
 } from '@clack/prompts'
 import fs from 'fs-extra'
-import path from 'path'
-import { cyan, bold, yellow } from 'picocolors'
-import { fileURLToPath } from 'url'
 import template from 'lodash.template'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { bold, cyan, yellow } from 'picocolors'
 
 export enum ScaffoldThemeType {
   Default = 'default theme',
@@ -33,19 +33,23 @@ const getPackageManger = () => {
   return name.split('/')[0]
 }
 
-export async function init() {
+export async function init(root: string | undefined) {
   intro(bold(cyan('Welcome to VitePress!')))
 
   const options: ScaffoldOptions = await group(
     {
-      root: () =>
-        text({
+      root: async () => {
+        if (root) return root
+
+        return text({
           message: 'Where should VitePress initialize the config?',
           initialValue: './',
           validate(value) {
             // TODO make sure directory is inside
+            return undefined
           }
-        }),
+        })
+      },
 
       title: () =>
         text({

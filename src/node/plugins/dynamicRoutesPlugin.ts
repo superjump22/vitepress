@@ -1,3 +1,7 @@
+import fs from 'fs-extra'
+import path from 'node:path'
+import c from 'picocolors'
+import { glob } from 'tinyglobby'
 import {
   loadConfigFromFile,
   normalizePath,
@@ -5,10 +9,6 @@ import {
   type Plugin,
   type ViteDevServer
 } from 'vite'
-import fs from 'fs-extra'
-import c from 'picocolors'
-import path from 'path'
-import glob from 'fast-glob'
 import { type SiteConfig, type UserConfig } from '../siteConfig'
 import { resolveRewrites } from './rewritesPlugin'
 
@@ -19,7 +19,7 @@ export async function resolvePages(
   userConfig: UserConfig,
   logger: Logger
 ) {
-  // Important: fast-glob doesn't guarantee order of the returned files.
+  // Important: tinyglobby doesn't guarantee order of the returned files.
   // We must sort the pages so the input list to rollup is stable across
   // builds - otherwise different input order could result in different exports
   // order in shared chunks which in turns invalidates the hash of every chunk!
@@ -32,7 +32,8 @@ export async function resolvePages(
         '**/node_modules/**',
         '**/dist/**',
         ...(userConfig.srcExclude || [])
-      ]
+      ],
+      expandDirectories: false
     })
   ).sort()
 
@@ -131,7 +132,10 @@ export const dynamicRoutesPlugin = async (
         // we use a special injection syntax so the content is rendered as
         // static local content instead of included as runtime data.
         if (content) {
-          baseContent = baseContent.replace(/<!--\s*@content\s*-->/, content)
+          baseContent = baseContent.replace(
+            /<!--\s*@content\s*-->/,
+            content.replace(/\$/g, '$$$')
+          )
         }
 
         // params are injected with special markers and extracted as part of
@@ -147,7 +151,7 @@ export const dynamicRoutesPlugin = async (
       const mods = config.dynamicRoutes.fileToModulesMap[ctx.file]
       if (mods) {
         // path loader module or deps updated, reset loaded routes
-        if (!/\.md$/.test(ctx.file)) {
+        if (!ctx.file.endsWith('.md')) {
           Object.assign(
             config,
             await resolvePages(config.srcDir, config.userConfig, config.logger)

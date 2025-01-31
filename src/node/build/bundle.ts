@@ -1,6 +1,6 @@
 import fs from 'fs-extra'
-import path from 'path'
-import { fileURLToPath } from 'url'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import {
   build,
   normalizePath,
@@ -30,7 +30,6 @@ const excludedModules = [
   'node_modules/@vueuse/core/',
   'node_modules/@vueuse/shared/',
   'node_modules/vue/',
-  'node_modules/vue-demi/',
   clientDir
 ]
 
@@ -43,8 +42,8 @@ export async function bundle(
   serverResult: Rollup.RollupOutput
   pageToHashMap: Record<string, string>
 }> {
-  const pageToHashMap = Object.create(null)
-  const clientJSMap = Object.create(null)
+  const pageToHashMap = Object.create(null) as Record<string, string>
+  const clientJSMap = Object.create(null) as Record<string, string>
 
   // define custom rollup input
   // this is a multi-entry build - every page is considered an entry chunk
@@ -89,21 +88,15 @@ export async function bundle(
       ssr,
       ssrEmitAssets: config.mpa,
       // minify with esbuild in MPA mode (for CSS)
-      minify: ssr
-        ? config.mpa
-          ? 'esbuild'
-          : false
-        : typeof options.minify === 'boolean'
-          ? options.minify
-          : !process.env.DEBUG,
+      minify: ssr ? !!config.mpa : (options.minify ?? !process.env.DEBUG),
       outDir: ssr ? config.tempDir : config.outDir,
       cssCodeSplit: false,
       rollupOptions: {
         ...rollupOptions,
         input: {
-          ...input,
           // use different entry based on ssr or not
-          app: path.resolve(APP_PATH, ssr ? 'ssr.js' : 'index.js')
+          app: path.resolve(APP_PATH, ssr ? 'ssr.js' : 'index.js'),
+          ...input
         },
         // important so that each page chunk and the index export things for each
         // other
@@ -202,7 +195,15 @@ export async function bundle(
     }
   }
 
-  return { clientResult, serverResult, pageToHashMap }
+  // sort pageToHashMap to ensure stable output
+  const sortedPageToHashMap = Object.create(null) as Record<string, string>
+  Object.keys(pageToHashMap)
+    .sort()
+    .forEach((key) => {
+      sortedPageToHashMap[key] = pageToHashMap[key]
+    })
+
+  return { clientResult, serverResult, pageToHashMap: sortedPageToHashMap }
 }
 
 const cache = new Map<string, boolean>()

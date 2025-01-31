@@ -10,7 +10,7 @@ outline: deep
 - 你使用的是默认的生成输出目录 （`.vitepress/dist`）。
 - VitePress 作为本地依赖项安装在项目中，并且你已在 `package.json` 中设置以下脚本：
 
-  ```json
+  ```json [package.json]
   {
     "scripts": {
       "docs:build": "vitepress build docs",
@@ -73,7 +73,7 @@ Cache-Control: max-age=31536000,immutable
   cache-control: immutable
 ```
 
-注意：该 `_headers` 文件应放置在 [public 目录](/guide/asset-handling#the-public-directory)中 (在我们的例子中是 `docs/public/_headers`)，以便将其逐字复制到输出目录。
+注意：该 `_headers` 文件应放置在 [public 目录](./asset-handling#the-public-directory)中 (在我们的例子中是 `docs/public/_headers`)，以便将其逐字复制到输出目录。
 
 [Netlify 自定义标头文档](https://docs.netlify.com/routing/headers/)
 
@@ -121,7 +121,7 @@ Cache-Control: max-age=31536000,immutable
 
 1. 在项目的 `.github/workflows` 目录中创建一个名为 `deploy.yml` 的文件，其中包含这样的内容：
 
-   ```yaml
+   ```yaml [.github/workflows/deploy.yml]
    # 构建 VitePress 站点并将其部署到 GitHub Pages 的示例工作流程
    #
    name: Deploy VitePress site to Pages
@@ -156,7 +156,9 @@ Cache-Control: max-age=31536000,immutable
            uses: actions/checkout@v4
            with:
              fetch-depth: 0 # 如果未启用 lastUpdated，则不需要
-         # - uses: pnpm/action-setup@v3 # 如果使用 pnpm，请取消注释
+         # - uses: pnpm/action-setup@v3 # 如果使用 pnpm，请取消此区域注释
+         #   with:
+         #     version: 9
          # - uses: oven-sh/setup-bun@v1 # 如果使用 Bun，请取消注释
          - name: Setup Node
            uses: actions/setup-node@v4
@@ -202,7 +204,7 @@ Cache-Control: max-age=31536000,immutable
 
 2. 在项目的根目录中创建一个名为 `.gitlab-ci.yml` 的文件，其中包含以下内容。每当你更改内容时，这都会构建和部署你的站点：
 
-   ```yaml
+   ```yaml [.gitlab-ci.yml]
    image: node:18
    pages:
      cache:
@@ -235,7 +237,7 @@ Cache-Control: max-age=31536000,immutable
 
    `firebase.json`:
 
-   ```json
+   ```json [firebase.json]
    {
      "hosting": {
        "public": "docs/.vitepress/dist",
@@ -246,7 +248,7 @@ Cache-Control: max-age=31536000,immutable
 
    `.firebaserc`:
 
-   ```json
+   ```json [.firebaserc]
    {
      "projects": {
        "default": "<YOUR_FIREBASE_ID>"
@@ -274,7 +276,7 @@ Cache-Control: max-age=31536000,immutable
 
 2. 使用以下内容在项目的根目录中创建一个名为 `static.json` 的文件：
 
-   ```json
+   ```json [static.json]
    {
      "root": "docs/.vitepress/dist"
    }
@@ -286,7 +288,7 @@ Cache-Control: max-age=31536000,immutable
 
 ### Kinsta 静态站点托管 {#kinsta-static-site-hosting}
 
-你可以按照这些[说明](https://kinsta.com/docs/vitepress-static-site-example/) 在 [Kinsta](https://kinsta.com/static-site-hosting/) 上部署 Vitepress 站点。
+你可以按照这些[说明](https://kinsta.com/docs/vitepress-static-site-example/) 在 [Kinsta](https://kinsta.com/static-site-hosting/) 上部署 VitePress 站点。
 
 ### Stormkit
 
@@ -317,7 +319,7 @@ server {
 
         # a folder without index.html raises 403 in this setup
         error_page 403 /404.html;
-        
+
         # adjust caching headers
         # files in the assets folder have hashes filenames
         location ~* ^/assets/ {

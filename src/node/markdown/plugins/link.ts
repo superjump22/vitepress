@@ -3,7 +3,7 @@
 // 2. normalize internal links to end with `.html`
 
 import type MarkdownIt from 'markdown-it'
-import { URL } from 'url'
+import { URL } from 'node:url'
 import {
   EXTERNAL_URL_RE,
   isExternal,
@@ -27,7 +27,9 @@ export const linkPlugin = (
   ) => {
     const token = tokens[idx]
     const hrefIndex = token.attrIndex('href')
-    if (hrefIndex >= 0) {
+    const targetIndex = token.attrIndex('target')
+    const downloadIndex = token.attrIndex('download')
+    if (hrefIndex >= 0 && targetIndex < 0 && downloadIndex < 0) {
       const hrefAttr = token.attrs![hrefIndex]
       const url = hrefAttr[1]
       if (isExternal(url)) {
@@ -90,7 +92,7 @@ export const linkPlugin = (
     }
 
     // ensure leading . for relative paths
-    if (!url.startsWith('/') && !/^\.\//.test(url)) {
+    if (!url.startsWith('/') && !url.startsWith('./')) {
       url = './' + url
     }
 

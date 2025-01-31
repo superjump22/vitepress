@@ -2,7 +2,7 @@ import { resolveTitleFromToken } from '@mdit-vue/shared'
 import _debug from 'debug'
 import fs from 'fs-extra'
 import { LRUCache } from 'lru-cache'
-import path from 'path'
+import path from 'node:path'
 import type { SiteConfig } from './config'
 import {
   createMarkdownRenderer,
@@ -57,21 +57,33 @@ export async function createMarkdownToVueRenderFn(
     base,
     siteConfig?.logger
   )
+
   pages = pages.map((p) => slash(p.replace(/\.md$/, '')))
+
+  const dynamicRoutes = new Map(
+    siteConfig?.dynamicRoutes?.routes.map((r) => [
+      r.fullPath,
+      slash(path.join(srcDir, r.route))
+    ]) || []
+  )
+
+  const rewrites = new Map(
+    Object.entries(siteConfig?.rewrites.map || {}).map(([key, value]) => [
+      slash(path.join(srcDir, key)),
+      slash(path.join(srcDir, value!))
+    ]) || []
+  )
 
   return async (
     src: string,
     file: string,
     publicDir: string
   ): Promise<MarkdownCompileResult> => {
-    const fileOrig = file
-    const alias =
-      siteConfig?.rewrites.map[file] || // virtual dynamic path file
-      siteConfig?.rewrites.map[file.slice(srcDir.length + 1)]
-    file = alias ? path.join(srcDir, alias) : file
+    const fileOrig = dynamicRoutes.get(file) || file
+    file = rewrites.get(file) || file
     const relativePath = slash(path.relative(srcDir, file))
-    const cacheKey = JSON.stringify({ src, file: fileOrig })
 
+    const cacheKey = JSON.stringify({ src, file: relativePath })
     if (isBuild || options.cache !== false) {
       const cached = cache.get(cacheKey)
       if (cached) {
@@ -107,7 +119,7 @@ export async function createMarkdownToVueRenderFn(
       realPath: fileOrig,
       localeIndex
     }
-    const html = md.render(src, env)
+    const html = await md.renderAsync(src, env)
     const {
       frontmatter = {},
       headers = [],
@@ -185,8 +197,12 @@ export async function createMarkdownToVueRenderFn(
       filePath: slash(path.relative(srcDir, fileOrig))
     }
 
-    if (includeLastUpdatedData) {
-      pageData.lastUpdated = await getGitTimestamp(fileOrig)
+    if (includeLastUpdatedData && frontmatter.lastUpdated !== false) {
+      if (frontmatter.lastUpdated instanceof Date) {
+        pageData.lastUpdated = +frontmatter.lastUpdated
+      } else {
+        pageData.lastUpdated = await getGitTimestamp(fileOrig)
+      }
     }
 
     if (siteConfig?.transformPageData) {

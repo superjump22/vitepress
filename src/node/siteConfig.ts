@@ -77,6 +77,7 @@ export interface UserConfig<ThemeConfig = any>
     | boolean
     | 'dark'
     | 'force-dark'
+    | 'force-auto'
     | (Omit<UseDarkOptions, 'initialValue'> & { initialValue?: 'dark' })
   lastUpdated?: boolean
   contentProps?: Record<string, any>
@@ -161,7 +162,7 @@ export interface UserConfig<ThemeConfig = any>
    *
    * source -> destination
    */
-  rewrites?: Record<string, string>
+  rewrites?: Record<string, string> | ((id: string) => string)
 
   /**
    * @experimental
